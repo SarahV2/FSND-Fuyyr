@@ -12,6 +12,9 @@ import logging
 from logging import Formatter, FileHandler
 from flask_wtf import Form
 from forms import *
+from flask_migrate import Migrate
+import sys
+
 #----------------------------------------------------------------------------#
 # App Config.
 #----------------------------------------------------------------------------#
@@ -21,7 +24,10 @@ moment = Moment(app)
 app.config.from_object('config')
 db = SQLAlchemy(app)
 
-# TODO: connect to a local postgresql database
+# (Done): connect to a local postgresql database
+app.config['SQLALCHEMY_DATABASE_URI']
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
 
 #----------------------------------------------------------------------------#
 # Models.
@@ -36,10 +42,11 @@ class Venue(db.Model):
     state = db.Column(db.String(120))
     address = db.Column(db.String(120))
     phone = db.Column(db.String(120))
+    genres=db.Column(db.String(120))
     image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
+    facebook_link = db.Column(db.String(500))
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    # (Done): implement any missing fields, as a database migration using Flask-Migrate
 
 class Artist(db.Model):
     __tablename__ = 'Artist'
@@ -51,9 +58,12 @@ class Artist(db.Model):
     phone = db.Column(db.String(120))
     genres = db.Column(db.String(120))
     image_link = db.Column(db.String(500))
-    facebook_link = db.Column(db.String(120))
+    facebook_link = db.Column(db.String(500))
+    website = db.Column(db.String(500))
+    seeking_venue=db.Column(db.Boolean)
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+
+    # (Done): implement any missing fields, as a database migration using Flask-Migrate
 
 # TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
@@ -412,12 +422,36 @@ def create_artist_form():
 
 @app.route('/artists/create', methods=['POST'])
 def create_artist_submission():
+  
   # called upon submitting the new artist listing form
-  # TODO: insert form data as a new Venue record in the db, instead
+  error = False
+  body = {}
+  # TODO: insert form data as a new Artist record in the db, instead
+  try:
+    artist_name = request.form['name']
+    city=request.form['city']
+    state=request.form['state']
+    phone_number=request.form['phone']
+    genres=request.form.getlist('genres')
+    facebook_link=request.form['facebook_link']
+    newArtist=Artist(name=artist_name,city=city,state=state,phone=phone_number,genres=genres,facebook_link=facebook_link)
+    db.session.add(newArtist)
+    db.session.commit()
+    # on successful db insert, flash success
+    flash('Artist ' + request.form['name'] + ' was successfully listed!')
+    body['id'] = newArtist.id
+    body['name'] = newArtist.name
+  except:
+    error = True
+    db.session.rollback()
+    print('an error occured')
+  finally:
+    db.session.close()
   # TODO: modify data to be the data object returned from db insertion
 
-  # on successful db insert, flash success
-  flash('Artist ' + request.form['name'] + ' was successfully listed!')
+  if error:
+    flash('An error occurred. Artist ' + data.name + ' could not be listed.')
+    
   # TODO: on unsuccessful db insert, flash an error instead.
   # e.g., flash('An error occurred. Artist ' + data.name + ' could not be listed.')
   return render_template('pages/home.html')
