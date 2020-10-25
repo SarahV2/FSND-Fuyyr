@@ -33,6 +33,8 @@ pip install SQLAlchemy
 pip install postgres
 pip install Flask
 pip install Flask-Migrate
+pip install flask_sqlalchemy
+
 ```
 > **Note** - If we do not mention the specific version of a package, then the default latest stable package will be installed. 
 
