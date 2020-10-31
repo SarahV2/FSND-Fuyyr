@@ -116,6 +116,14 @@ class VenueForm(Form):
     facebook_link = StringField(
         'facebook_link', validators=[URL()]
     )
+    website = StringField(
+        'website'
+    )
+    seeking_talent = RadioField('seeking_venue', coerce=bool, choices = [(True,'Yes'),(False,'No')])
+    
+    seeking_description = StringField(
+        'seeking_description'
+    )
 
 class ArtistForm(Form):
     name = StringField(
