@@ -108,10 +108,10 @@ app.jinja_env.filters['datetime'] = format_datetime
 
 def convert_date(date_time_value):
 
-  stringified_date = date_time_value = (
-      date_time_value).strftime("%m/%d/%Y, %H:%M:%S")
+    stringified_date = date_time_value = (
+        date_time_value).strftime("%m/%d/%Y, %H:%M:%S")
 
-  return stringified_date
+    return stringified_date
 #----------------------------------------------------------------------------#
 
 # Controllers.
@@ -128,29 +128,36 @@ def index():
 
 @app.route('/venues')
 def venues():
-    # TODO: replace with real venues data.
+    # (Done): replace with real venues data.
     #       num_shows should be aggregated based on number of upcoming shows per venue.
-    data = [{
-        "city": "San Francisco",
-        "state": "CA",
-        "venues": [{
-            "id": 1,
-            "name": "The Musical Hop",
-            "num_upcoming_shows": 0,
-        }, {
-            "id": 3,
-            "name": "Park Square Live Music & Coffee",
-            "num_upcoming_shows": 1,
-        }]
-    }, {
-        "city": "New York",
-        "state": "NY",
-        "venues": [{
-            "id": 2,
-            "name": "The Dueling Pianos Bar",
-            "num_upcoming_shows": 0,
-        }]
-    }]
+    data = []
+    venues_by_area = Venue.query.group_by(
+        Venue.id, Venue.city, Venue.state).all()
+
+    areas = set()
+    for venue_area in venues_by_area:
+        areas.add((venue_area.city, venue_area.state))
+
+    venues = Venue.query.all()
+    # for each area (state, city), append all venues which share those same two values
+    for area in areas:
+        # list to store venues related to the current itration of area (city, state)
+        current_venues = []
+        for venue in venues:
+            if(venue.state == area[1] and venue.city == area[0]):
+                upcoming_shows_count = len(venue.query.filter(
+                    Show.start_time > datetime.now()).all())
+                current_venues.append({
+                    "id": venue.id,
+                    "name": venue.name,
+                    "num_upcoming_shows": upcoming_shows_count
+                })
+        data.append({
+            "city": area[0],
+            "state": area[1],
+            "venues": current_venues
+        })
+
     return render_template('pages/venues.html', areas=data)
 
 
@@ -193,23 +200,23 @@ def show_venue(venue_id):
 
     shows = venueData.shows
     for show in shows:
-      showDetails={
-        "artist_id":show.artist_id,
-        "artist_name":show.Artist.name,
-        "artist_image_link":show.Artist.image_link,
-        # Convert show's start time to string to ve able to render it in the html file
-        "start_time":convert_date(show.start_time)
+        showDetails = {
+            "artist_id": show.artist_id,
+            "artist_name": show.Artist.name,
+            "artist_image_link": show.Artist.image_link,
+            # Convert show's start time to string to ve able to render it in the html file
+            "start_time": convert_date(show.start_time)
 
-      }
-      if show.start_time > datetime.now():
-        upcomingShows.append(showDetails)
-      else:
-        pastShows.append(showDetails)
+        }
+        if show.start_time > datetime.now():
+            upcomingShows.append(showDetails)
+        else:
+            pastShows.append(showDetails)
 
     venueData.upcoming_shows = upcomingShows
     venueData.past_shows = pastShows
-    venueData.past_shows_count=len(pastShows)
-    venueData.upcoming_shows_count=len(upcomingShows)
+    venueData.past_shows_count = len(pastShows)
+    venueData.upcoming_shows_count = len(upcomingShows)
 
     return render_template('pages/show_venue.html', venue=venueData)
 
@@ -276,6 +283,9 @@ def delete_venue(venue_id):
     error = False
     try:
         venue = Venue.query.get(venue_id)
+        # delete all shows which this venue is associated with
+        for show in venue.shows:
+            db.session.delete(show)
         db.session.delete(venue)
         db.session.commit()
     except:
@@ -334,29 +344,29 @@ def show_artist(artist_id):
 
     if not artistData:
         abort(404)
-        
+
     pastShows = []
     upcomingShows = []
 
     shows = artistData.shows
     for show in shows:
-      showDetails={
-        "venue_id":show.venue_id,
-        "venue_name":show.Venue.name,
-        "venue_image_link":show.Venue.image_link,
-        # Convert show's start time to string to ve able to render it in the html file
-        "start_time":convert_date(show.start_time)
+        showDetails = {
+            "venue_id": show.venue_id,
+            "venue_name": show.Venue.name,
+            "venue_image_link": show.Venue.image_link,
+            # Convert show's start time to string to ve able to render it in the html file
+            "start_time": convert_date(show.start_time)
 
-      }
-      if show.start_time > datetime.now():
-        upcomingShows.append(showDetails)
-      else:
-        pastShows.append(showDetails)
+        }
+        if show.start_time > datetime.now():
+            upcomingShows.append(showDetails)
+        else:
+            pastShows.append(showDetails)
 
     artistData.upcoming_shows = upcomingShows
     artistData.past_shows = pastShows
-    artistData.past_shows_count=len(pastShows)
-    artistData.upcoming_shows_count=len(upcomingShows)
+    artistData.past_shows_count = len(pastShows)
+    artistData.upcoming_shows_count = len(upcomingShows)
 
     return render_template('pages/show_artist.html', artist=artistData)
 
@@ -526,45 +536,22 @@ def create_artist_submission():
 @app.route('/shows')
 def shows():
     # displays list of shows at /shows
-    # TODO: replace with real shows data.
+    # (Done): replace with real shows data.
     #       num_shows should be aggregated based on number of upcoming shows per venue.
-    data = [{
-        "venue_id": 1,
-        "venue_name": "The Musical Hop",
-        "artist_id": 4,
-        "artist_name": "Guns N Petals",
-        "artist_image_link": "https://images.unsplash.com/photo-1549213783-8284d0336c4f?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=300&q=80",
-        "start_time": "2019-05-21T21:30:00.000Z"
-    }, {
-        "venue_id": 3,
-        "venue_name": "Park Square Live Music & Coffee",
-        "artist_id": 5,
-        "artist_name": "Matt Quevedo",
-        "artist_image_link": "https://images.unsplash.com/photo-1495223153807-b916f75de8c5?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=334&q=80",
-        "start_time": "2019-06-15T23:00:00.000Z"
-    }, {
-        "venue_id": 3,
-        "venue_name": "Park Square Live Music & Coffee",
-        "artist_id": 6,
-        "artist_name": "The Wild Sax Band",
-        "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-        "start_time": "2035-04-01T20:00:00.000Z"
-    }, {
-        "venue_id": 3,
-        "venue_name": "Park Square Live Music & Coffee",
-        "artist_id": 6,
-        "artist_name": "The Wild Sax Band",
-        "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-        "start_time": "2035-04-08T20:00:00.000Z"
-    }, {
-        "venue_id": 3,
-        "venue_name": "Park Square Live Music & Coffee",
-        "artist_id": 6,
-        "artist_name": "The Wild Sax Band",
-        "artist_image_link": "https://images.unsplash.com/photo-1558369981-f9ca78462e61?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=794&q=80",
-        "start_time": "2035-04-15T20:00:00.000Z"
-    }]
-    return render_template('pages/shows.html', shows=data)
+    shows = Show.query.all()
+    allShows = []
+    for show in shows:
+        showData = {
+            "venue_id": show.venue_id,
+            "venue_name": show.Venue.name,
+            "artist_id": show.artist_id,
+            "artist_name": show.Artist.name,
+            "artist_image_link": show.Artist.image_link,
+            "start_time": convert_date(show.start_time)
+        }
+        allShows.append(showData)
+
+    return render_template('pages/shows.html', shows=allShows)
 
 
 @app.route('/shows/create')

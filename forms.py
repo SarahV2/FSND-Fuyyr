@@ -3,6 +3,7 @@ from flask_wtf import Form
 from wtforms import StringField, SelectField, SelectMultipleField, DateTimeField, RadioField
 from wtforms.validators import DataRequired, AnyOf, URL
 
+
 class ShowForm(Form):
     artist_id = StringField(
         'artist_id', validators=[DataRequired()]
@@ -13,8 +14,9 @@ class ShowForm(Form):
     start_time = DateTimeField(
         'start_time',
         validators=[DataRequired()],
-        default= datetime.today()
+        default=datetime.today()
     )
+
 
 class VenueForm(Form):
     name = StringField(
@@ -119,11 +121,13 @@ class VenueForm(Form):
     website = StringField(
         'website'
     )
-    seeking_talent = RadioField('seeking_venue', coerce=bool, choices = [(True,'Yes'),(False,'No')])
-    
+    seeking_talent = RadioField('seeking_venue', coerce=bool, choices=[
+                                (True, 'Yes'), (False, 'No')], default=False)
+
     seeking_description = StringField(
         'seeking_description'
     )
+
 
 class ArtistForm(Form):
     name = StringField(
@@ -227,8 +231,9 @@ class ArtistForm(Form):
         # TODO implement enum restriction
         'facebook_link', validators=[URL()]
     )
-    seeking_venue = RadioField('seeking_venue', coerce=bool, choices = [(True,'Yes'),(False,'No')])
-    
+    seeking_venue = RadioField('seeking_venue', coerce=bool, choices=[
+                               (True, 'Yes'), (False, 'No')], default=False)
+
     seeking_description = StringField(
         'seeking_description'
     )
