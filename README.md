@@ -11,8 +11,7 @@ The users are able to:
 * create new venues, artists, and create new shows.
 * search for venues and artists.
 * learning more about a specific artist or venue.
-* delete a venue
-
+* delete venues
 
 
 ## Tech Stack (Dependencies)
