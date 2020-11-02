@@ -128,8 +128,24 @@ def show_venue(venue_id):
     pastShows = []
     upcomingShows = []
 
-    shows = venueData.shows
-    for show in shows:
+    # shows = venueData.shows
+    upcoming_shows = db.session.query(Show).join(Venue, Show.venue_id == venue_id).join(
+        Artist).filter(Show.start_time > datetime.now()).all()
+    for show in upcoming_shows:
+        showDetails = {
+            "artist_id": show.artist_id,
+            "artist_name": show.Artist.name,
+            "artist_image_link": show.Artist.image_link,
+            # Convert show's start time to string to ve able to render it in the html file
+            "start_time": convert_date(show.start_time)
+
+        }
+        upcomingShows.append(showDetails)
+
+    # shows=Show.query.filter_by(venue_id=venue_id).all
+    past_shows = db.session.query(Show).join(Venue, Show.venue_id == venue_id).join(
+        Artist).filter(Show.start_time <= datetime.now()).all()
+    for show in past_shows:
         showDetails = {
             "artist_id": show.artist_id,
             "artist_name": show.Artist.name,
